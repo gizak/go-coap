@@ -168,6 +168,9 @@ const (
 	URIQuery      OptionID = 15
 	Accept        OptionID = 17
 	LocationQuery OptionID = 20
+	Block2        OptionID = 23
+	Block1        OptionID = 27
+	Size2         OptionID = 28
 	ProxyURI      OptionID = 35
 	ProxyScheme   OptionID = 39
 	Size1         OptionID = 60
@@ -191,22 +194,25 @@ type optionDef struct {
 }
 
 var optionDefs = [256]optionDef{
-	IfMatch:       optionDef{valueFormat: valueOpaque, minLen: 0, maxLen: 8},
-	URIHost:       optionDef{valueFormat: valueString, minLen: 1, maxLen: 255},
-	ETag:          optionDef{valueFormat: valueOpaque, minLen: 1, maxLen: 8},
-	IfNoneMatch:   optionDef{valueFormat: valueEmpty, minLen: 0, maxLen: 0},
-	Observe:       optionDef{valueFormat: valueUint, minLen: 0, maxLen: 3},
-	URIPort:       optionDef{valueFormat: valueUint, minLen: 0, maxLen: 2},
-	LocationPath:  optionDef{valueFormat: valueString, minLen: 0, maxLen: 255},
-	URIPath:       optionDef{valueFormat: valueString, minLen: 0, maxLen: 255},
-	ContentFormat: optionDef{valueFormat: valueUint, minLen: 0, maxLen: 2},
-	MaxAge:        optionDef{valueFormat: valueUint, minLen: 0, maxLen: 4},
-	URIQuery:      optionDef{valueFormat: valueString, minLen: 0, maxLen: 255},
-	Accept:        optionDef{valueFormat: valueUint, minLen: 0, maxLen: 2},
-	LocationQuery: optionDef{valueFormat: valueString, minLen: 0, maxLen: 255},
-	ProxyURI:      optionDef{valueFormat: valueString, minLen: 1, maxLen: 1034},
-	ProxyScheme:   optionDef{valueFormat: valueString, minLen: 1, maxLen: 255},
-	Size1:         optionDef{valueFormat: valueUint, minLen: 0, maxLen: 4},
+	IfMatch:       {valueFormat: valueOpaque, minLen: 0, maxLen: 8},
+	URIHost:       {valueFormat: valueString, minLen: 1, maxLen: 255},
+	ETag:          {valueFormat: valueOpaque, minLen: 1, maxLen: 8},
+	IfNoneMatch:   {valueFormat: valueEmpty, minLen: 0, maxLen: 0},
+	Observe:       {valueFormat: valueUint, minLen: 0, maxLen: 3},
+	URIPort:       {valueFormat: valueUint, minLen: 0, maxLen: 2},
+	LocationPath:  {valueFormat: valueString, minLen: 0, maxLen: 255},
+	URIPath:       {valueFormat: valueString, minLen: 0, maxLen: 255},
+	ContentFormat: {valueFormat: valueUint, minLen: 0, maxLen: 2},
+	MaxAge:        {valueFormat: valueUint, minLen: 0, maxLen: 4},
+	URIQuery:      {valueFormat: valueString, minLen: 0, maxLen: 255},
+	Accept:        {valueFormat: valueUint, minLen: 0, maxLen: 2},
+	LocationQuery: {valueFormat: valueString, minLen: 0, maxLen: 255},
+	Block2:        {valueFormat: valueUint, minLen: 0, maxLen: 3},
+	Block1:        {valueFormat: valueUint, minLen: 0, maxLen: 3},
+	Size2:         {valueFormat: valueUint, minLen: 0, maxLen: 4},
+	ProxyURI:      {valueFormat: valueString, minLen: 1, maxLen: 1034},
+	ProxyScheme:   {valueFormat: valueString, minLen: 1, maxLen: 255},
+	Size1:         {valueFormat: valueUint, minLen: 0, maxLen: 4},
 }
 
 // MediaType specifies the content type of a message.
@@ -426,6 +432,23 @@ func (m *Message) AddOption(opID OptionID, val interface{}) {
 func (m *Message) SetOption(opID OptionID, val interface{}) {
 	m.RemoveOption(opID)
 	m.AddOption(opID, val)
+}
+
+// BlockOptValue generates a block1/block2 option value, return nil if num
+func BlockOptValue(num uint32, more bool, szx uint32) []byte {
+	if num > 0xFFFFF || szx > 0x0F {
+		return nil
+	}
+
+	m := uint32(0)
+	if more {
+		m = 1
+	}
+
+	szx &= ^uint32(0x0F)
+
+	val := (num << 4) | (m << 3) | szx
+	return encodeInt(val)
 }
 
 const (

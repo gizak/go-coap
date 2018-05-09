@@ -56,6 +56,11 @@ func (c *Conn) Send(req Message) (*Message, error) {
 	return &rv, nil
 }
 
+// SendBlock sends a block1 message. Get a resp if there is one
+func (c *Conn) SendBlock(req Message) (*Message, error) {
+	return nil, nil
+}
+
 // Receive a message.
 func (c *Conn) Receive() (*Message, error) {
 	rv, err := Receive(c.conn, c.buf)

@@ -133,7 +133,6 @@ func TestTypeString(t *testing.T) {
 	tests := map[COAPType]string{
 		Confirmable:    "Confirmable",
 		NonConfirmable: "NonConfirmable",
-		255:            "Unknown (0xff)",
 	}
 
 	for code, exp := range tests {
