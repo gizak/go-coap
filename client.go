@@ -18,8 +18,9 @@ const (
 
 // Conn is a CoAP client connection.
 type Conn struct {
-	conn *net.UDPConn
-	buf  []byte
+	conn         *net.UDPConn
+	buf          []byte
+	BlockSizeExp int
 }
 
 // Dial connects a CoAP client.
@@ -34,7 +35,7 @@ func Dial(n, addr string) (*Conn, error) {
 		return nil, err
 	}
 
-	return &Conn{s, make([]byte, maxPktLen)}, nil
+	return &Conn{s, make([]byte, maxPktLen), 4}, nil
 }
 
 // Send a message.  Get a response if there is one.
