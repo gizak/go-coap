@@ -56,55 +56,59 @@ const (
 
 // Response Codes
 const (
-	Created               COAPCode = 65
-	Deleted               COAPCode = 66
-	Valid                 COAPCode = 67
-	Changed               COAPCode = 68
-	Content               COAPCode = 69
-	BadRequest            COAPCode = 128
-	Unauthorized          COAPCode = 129
-	BadOption             COAPCode = 130
-	Forbidden             COAPCode = 131
-	NotFound              COAPCode = 132
-	MethodNotAllowed      COAPCode = 133
-	NotAcceptable         COAPCode = 134
-	PreconditionFailed    COAPCode = 140
-	RequestEntityTooLarge COAPCode = 141
-	UnsupportedMediaType  COAPCode = 143
-	InternalServerError   COAPCode = 160
-	NotImplemented        COAPCode = 161
-	BadGateway            COAPCode = 162
-	ServiceUnavailable    COAPCode = 163
-	GatewayTimeout        COAPCode = 164
-	ProxyingNotSupported  COAPCode = 165
+	Created                 COAPCode = 65
+	Deleted                 COAPCode = 66
+	Valid                   COAPCode = 67
+	Changed                 COAPCode = 68
+	Content                 COAPCode = 69
+	Continue                COAPCode = 95
+	BadRequest              COAPCode = 128
+	Unauthorized            COAPCode = 129
+	BadOption               COAPCode = 130
+	Forbidden               COAPCode = 131
+	NotFound                COAPCode = 132
+	MethodNotAllowed        COAPCode = 133
+	NotAcceptable           COAPCode = 134
+	RequestEntityIncomplete COAPCode = 136
+	PreconditionFailed      COAPCode = 140
+	RequestEntityTooLarge   COAPCode = 141
+	UnsupportedMediaType    COAPCode = 143
+	InternalServerError     COAPCode = 160
+	NotImplemented          COAPCode = 161
+	BadGateway              COAPCode = 162
+	ServiceUnavailable      COAPCode = 163
+	GatewayTimeout          COAPCode = 164
+	ProxyingNotSupported    COAPCode = 165
 )
 
 var codeNames = [256]string{
-	GET:                   "GET",
-	POST:                  "POST",
-	PUT:                   "PUT",
-	DELETE:                "DELETE",
-	Created:               "Created",
-	Deleted:               "Deleted",
-	Valid:                 "Valid",
-	Changed:               "Changed",
-	Content:               "Content",
-	BadRequest:            "BadRequest",
-	Unauthorized:          "Unauthorized",
-	BadOption:             "BadOption",
-	Forbidden:             "Forbidden",
-	NotFound:              "NotFound",
-	MethodNotAllowed:      "MethodNotAllowed",
-	NotAcceptable:         "NotAcceptable",
-	PreconditionFailed:    "PreconditionFailed",
-	RequestEntityTooLarge: "RequestEntityTooLarge",
-	UnsupportedMediaType:  "UnsupportedMediaType",
-	InternalServerError:   "InternalServerError",
-	NotImplemented:        "NotImplemented",
-	BadGateway:            "BadGateway",
-	ServiceUnavailable:    "ServiceUnavailable",
-	GatewayTimeout:        "GatewayTimeout",
-	ProxyingNotSupported:  "ProxyingNotSupported",
+	GET:                     "GET",
+	POST:                    "POST",
+	PUT:                     "PUT",
+	DELETE:                  "DELETE",
+	Created:                 "Created",
+	Deleted:                 "Deleted",
+	Valid:                   "Valid",
+	Changed:                 "Changed",
+	Content:                 "Content",
+	Continue:                "Continue",
+	BadRequest:              "BadRequest",
+	Unauthorized:            "Unauthorized",
+	BadOption:               "BadOption",
+	Forbidden:               "Forbidden",
+	NotFound:                "NotFound",
+	MethodNotAllowed:        "MethodNotAllowed",
+	NotAcceptable:           "NotAcceptable",
+	RequestEntityIncomplete: "RequestEntityIncomplete",
+	PreconditionFailed:      "PreconditionFailed",
+	RequestEntityTooLarge:   "RequestEntityTooLarge",
+	UnsupportedMediaType:    "UnsupportedMediaType",
+	InternalServerError:     "InternalServerError",
+	NotImplemented:          "NotImplemented",
+	BadGateway:              "BadGateway",
+	ServiceUnavailable:      "ServiceUnavailable",
+	GatewayTimeout:          "GatewayTimeout",
+	ProxyingNotSupported:    "ProxyingNotSupported",
 }
 
 func init() {

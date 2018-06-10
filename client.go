@@ -3,6 +3,9 @@ package coap
 import (
 	"net"
 	"time"
+	"encoding/binary"
+	"math/rand"
+	"errors"
 )
 
 const (
@@ -21,6 +24,12 @@ type Conn struct {
 	conn         *net.UDPConn
 	buf          []byte
 	BlockSizeExp int
+	msWaitTime   int
+	curBlock int
+}
+
+func (c Conn) BlockSize() int {
+	return 1<<byte(c.BlockSizeExp+4)
 }
 
 // Dial connects a CoAP client.
@@ -35,11 +44,23 @@ func Dial(n, addr string) (*Conn, error) {
 		return nil, err
 	}
 
-	return &Conn{s, make([]byte, maxPktLen), 4}, nil
+	return &Conn{s, make([]byte, maxPktLen), 4, 10, 0}, nil
 }
 
 // Send a message.  Get a response if there is one.
 func (c *Conn) Send(req Message) (*Message, error) {
+
+	// switch to block1 if payload is larger then blkLen
+	if  len(req.Payload) > c.BlockSize() {
+		return c.SendBlock(req)
+	}
+
+	// normal message
+	return c.send(req)
+}
+
+// Send a message.  Get a response if there is one.
+func (c *Conn) send(req Message) (*Message, error) {
 	err := Transmit(c.conn, nil, req)
 	if err != nil {
 		return nil, err
@@ -57,9 +78,56 @@ func (c *Conn) Send(req Message) (*Message, error) {
 	return &rv, nil
 }
 
+
 // SendBlock sends a block1 message. Get a resp if there is one
 func (c *Conn) SendBlock(req Message) (*Message, error) {
-	return nil, nil
+	plen := len(req.Payload)
+	blkLen := c.BlockSize()
+
+	tok := make([]byte, 8)
+	binary.LittleEndian.PutUint64(tok, rand.Uint64())
+	req.Token = tok
+
+	blks := plen/blkLen
+	if plen % blkLen != 0 {
+		blks++
+	}
+
+	payload := make([]byte, plen)
+	copy(payload, req.Payload)
+
+	var resp *Message = nil
+	var err error = nil
+
+	for i:=0; i< blks; i++ {
+		st := i*blkLen
+		ed := (i+1)*blkLen
+		m := true
+		if i == blks -1 {
+			m = false
+			ed = plen
+		}
+
+		ok := false
+		req.Payload = payload[st : ed]
+		req.SetOption(Block1, BlockOptValue(uint32(i), m, uint32(c.BlockSizeExp)))
+
+		for j:=0; j < MaxRetransmit; j++ {
+			resp, err =  c.send(req)
+			// if success
+			if err == nil && (m && resp.Code==Continue) && (resp.Code & 0xf0) == 2 {
+				ok = true
+				break
+			}
+			// else retry
+		}
+		// return error if reach max retry times
+		if !ok {
+			return nil, errors.New("Failed to send block message")
+		}
+	}
+	return resp, err
+
 }
 
 // Receive a message.
