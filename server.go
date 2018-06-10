@@ -5,9 +5,42 @@ import (
 	"log"
 	"net"
 	"time"
+	"sync"
+	"errors"
+	"fmt"
+	"encoding/binary"
 )
 
 const maxPktLen = 1500
+
+type blkEntry struct {
+	data  []byte
+	atime int64
+	num   int
+}
+
+var session map[uint64]blkEntry
+var lk sync.Mutex
+
+func addBlockData(tok uint64, num int, d []byte) error {
+	// new
+	if num == 0 {
+		delete(session, tok)
+		session[tok] = blkEntry{d, time.Now().Unix(), 0}
+		return nil
+	}
+	// append
+	if blk, ok := session[tok]; ok {
+		if blk.num != num-1 {
+			return errors.New("data order unmatch")
+		}
+		blk.data = append(blk.data, d...)
+		blk.atime = time.Now().Unix()
+		blk.num = num
+	}
+	// no entry
+	return errors.New("no session entry found")
+}
 
 // Handler is a type that handles CoAP messages.
 type Handler interface {
@@ -35,8 +68,35 @@ func handlePacket(l *net.UDPConn, data []byte, u *net.UDPAddr,
 		return
 	}
 
+	// handle block
+	blkopt := msg.Option(Block1)
+	if blkopt != nil {
+		val := blkopt.(uint32)
+		szx := val & 7
+		num := val >> 4
+		m := (val & 8) >> 3
+		fmt.Printf("%d, %d, %d\n", num, m, 1<<(szx+4))
+		res := Message{
+			Type:      Acknowledgement,
+			Code:      Continue,
+			MessageID: msg.MessageID,
+			Token:     msg.Token,
+		}
+
+		tok, _ := binary.Uvarint(msg.Token)
+		addBlockData(tok, int(num), msg.Payload)
+		if m == 0 {
+			Transmit(l, u, res)
+			return
+		}
+		msg.Payload = make([]byte, len(session[tok].data))
+		copy(msg.Payload, session[tok].data)
+	}
+
 	rv := rh.ServeCOAP(l, u, &msg)
 	if rv != nil {
+		rv.Code = Valid
+		rv.Token = msg.Token
 		Transmit(l, u, *rv)
 	}
 }

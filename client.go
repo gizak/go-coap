@@ -44,7 +44,7 @@ func Dial(n, addr string) (*Conn, error) {
 		return nil, err
 	}
 
-	return &Conn{s, make([]byte, maxPktLen), 4, 10, 0}, nil
+	return &Conn{s, make([]byte, maxPktLen), 3, 10, 0}, nil
 }
 
 // Send a message.  Get a response if there is one.
