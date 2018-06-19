@@ -2,13 +2,13 @@
 package coap
 
 import (
-	"log"
-	"net"
-	"time"
-	"sync"
+	"encoding/binary"
 	"errors"
 	"fmt"
-	"encoding/binary"
+	"log"
+	"net"
+	"sync"
+	"time"
 )
 
 const maxPktLen = 1500
@@ -19,7 +19,7 @@ type blkEntry struct {
 	num   int
 }
 
-var session map[uint64]blkEntry
+var session map[uint64]blkEntry = make(map[uint64]blkEntry)
 var lk sync.Mutex
 
 func addBlockData(tok uint64, num int, d []byte) error {
@@ -37,6 +37,8 @@ func addBlockData(tok uint64, num int, d []byte) error {
 		blk.data = append(blk.data, d...)
 		blk.atime = time.Now().Unix()
 		blk.num = num
+		session[tok] = blk // write back changes
+		return nil
 	}
 	// no entry
 	return errors.New("no session entry found")
@@ -72,25 +74,30 @@ func handlePacket(l *net.UDPConn, data []byte, u *net.UDPAddr,
 	blkopt := msg.Option(Block1)
 	if blkopt != nil {
 		val := blkopt.(uint32)
-		szx := val & 7
+		//szx := val & 7
 		num := val >> 4
 		m := (val & 8) >> 3
-		fmt.Printf("%d, %d, %d\n", num, m, 1<<(szx+4))
+		//fmt.Printf("%d, %d, %d\n", num, m, 1<<(szx+4))
 		res := Message{
 			Type:      Acknowledgement,
 			Code:      Continue,
 			MessageID: msg.MessageID,
 			Token:     msg.Token,
 		}
-
+		//fmt.Printf("%v",msg.Payload)
 		tok, _ := binary.Uvarint(msg.Token)
-		addBlockData(tok, int(num), msg.Payload)
-		if m == 0 {
+		if err := addBlockData(tok, int(num), msg.Payload); err != nil {
+			fmt.Println(err)
+			return
+		}
+		//fmt.Printf("%v\n",session[tok].data)
+		if m != 0 {
 			Transmit(l, u, res)
 			return
 		}
 		msg.Payload = make([]byte, len(session[tok].data))
 		copy(msg.Payload, session[tok].data)
+
 	}
 
 	rv := rh.ServeCOAP(l, u, &msg)

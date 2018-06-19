@@ -449,7 +449,7 @@ func BlockOptValue(num uint32, more bool, szx uint32) []byte {
 		m = 1
 	}
 
-	szx &= ^uint32(0x0F)
+	szx &= uint32(0x0F)
 
 	val := (num << 4) | (m << 3) | szx
 	return encodeInt(val)

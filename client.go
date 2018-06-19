@@ -1,11 +1,11 @@
 package coap
 
 import (
+	"encoding/binary"
+	"errors"
+	"math/rand"
 	"net"
 	"time"
-	"encoding/binary"
-	"math/rand"
-	"errors"
 )
 
 const (
@@ -25,11 +25,11 @@ type Conn struct {
 	buf          []byte
 	BlockSizeExp int
 	msWaitTime   int
-	curBlock int
+	curBlock     int
 }
 
 func (c Conn) BlockSize() int {
-	return 1<<byte(c.BlockSizeExp+4)
+	return 1 << byte(c.BlockSizeExp+4)
 }
 
 // Dial connects a CoAP client.
@@ -51,7 +51,7 @@ func Dial(n, addr string) (*Conn, error) {
 func (c *Conn) Send(req Message) (*Message, error) {
 
 	// switch to block1 if payload is larger then blkLen
-	if  len(req.Payload) > c.BlockSize() {
+	if len(req.Payload) > c.BlockSize() {
 		return c.SendBlock(req)
 	}
 
@@ -78,7 +78,6 @@ func (c *Conn) send(req Message) (*Message, error) {
 	return &rv, nil
 }
 
-
 // SendBlock sends a block1 message. Get a resp if there is one
 func (c *Conn) SendBlock(req Message) (*Message, error) {
 	plen := len(req.Payload)
@@ -88,8 +87,8 @@ func (c *Conn) SendBlock(req Message) (*Message, error) {
 	binary.LittleEndian.PutUint64(tok, rand.Uint64())
 	req.Token = tok
 
-	blks := plen/blkLen
-	if plen % blkLen != 0 {
+	blks := plen / blkLen
+	if plen%blkLen != 0 {
 		blks++
 	}
 
@@ -99,23 +98,23 @@ func (c *Conn) SendBlock(req Message) (*Message, error) {
 	var resp *Message = nil
 	var err error = nil
 
-	for i:=0; i< blks; i++ {
-		st := i*blkLen
-		ed := (i+1)*blkLen
+	for i := 0; i < blks; i++ {
+		st := i * blkLen
+		ed := (i + 1) * blkLen
 		m := true
-		if i == blks -1 {
+		if i == blks-1 {
 			m = false
 			ed = plen
 		}
 
 		ok := false
-		req.Payload = payload[st : ed]
+		req.Payload = payload[st:ed]
 		req.SetOption(Block1, BlockOptValue(uint32(i), m, uint32(c.BlockSizeExp)))
 
-		for j:=0; j < MaxRetransmit; j++ {
-			resp, err =  c.send(req)
+		for j := 0; j < MaxRetransmit; j++ {
+			resp, err = c.send(req)
 			// if success
-			if err == nil && (m && resp.Code==Continue) && (resp.Code & 0xf0) == 2 {
+			if err == nil && (!m || (m && resp.Code == Continue)) && (resp.Code&0xe0) == 0x40 {
 				ok = true
 				break
 			}
