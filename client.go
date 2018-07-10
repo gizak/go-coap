@@ -24,7 +24,7 @@ type Conn struct {
 	conn         *net.UDPConn
 	buf          []byte
 	BlockSizeExp int
-	msWaitTime   int
+	MsWaitTime   int
 	curBlock     int
 }
 
@@ -44,7 +44,7 @@ func Dial(n, addr string) (*Conn, error) {
 		return nil, err
 	}
 
-	return &Conn{s, make([]byte, maxPktLen), 3, 10, 0}, nil
+	return &Conn{s, make([]byte, maxPktLen), 3, 20, 0}, nil
 }
 
 // Send a message.  Get a response if there is one.
@@ -113,6 +113,7 @@ func (c *Conn) SendBlock(req Message) (*Message, error) {
 
 		for j := 0; j < MaxRetransmit; j++ {
 			resp, err = c.send(req)
+			time.Sleep(time.Duration(c.MsWaitTime) * time.Millisecond)
 			// if success
 			if err == nil && (!m || (m && resp.Code == Continue)) && (resp.Code&0xe0) == 0x40 {
 				ok = true
@@ -125,7 +126,7 @@ func (c *Conn) SendBlock(req Message) (*Message, error) {
 			return nil, errors.New("Failed to send block message")
 		}
 	}
-	return resp, err
+	return c.Receive()
 
 }
 

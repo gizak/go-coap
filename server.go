@@ -31,8 +31,9 @@ func addBlockData(tok uint64, num int, d []byte) error {
 	}
 	// append
 	if blk, ok := session[tok]; ok {
+		//fmt.Printf("BLOCK session=0x%X num_in=%d num_se=%d\n", tok, num, blk.num)
 		if blk.num != num-1 {
-			return errors.New("data order unmatch")
+			return errors.New(fmt.Sprintf("data order unmatch: session=0x%X num_in=%d num_se=%d", tok, num, blk.num))
 		}
 		blk.data = append(blk.data, d...)
 		blk.atime = time.Now().Unix()
@@ -95,14 +96,15 @@ func handlePacket(l *net.UDPConn, data []byte, u *net.UDPAddr,
 			Transmit(l, u, res)
 			return
 		}
+		// last block
+		res.Code = Created
+		Transmit(l, u, res)
 		msg.Payload = make([]byte, len(session[tok].data))
 		copy(msg.Payload, session[tok].data)
-
 	}
 
 	rv := rh.ServeCOAP(l, u, &msg)
 	if rv != nil {
-		rv.Code = Valid
 		rv.Token = msg.Token
 		Transmit(l, u, *rv)
 	}
