@@ -32,6 +32,10 @@ func addBlockData(tok uint64, num int, d []byte) error {
 	// append
 	if blk, ok := session[tok]; ok {
 		//fmt.Printf("BLOCK session=0x%X num_in=%d num_se=%d\n", tok, num, blk.num)
+		// bypass stored block
+		if num <= blk.num {
+			return nil
+		}
 		if blk.num != num-1 {
 			return errors.New(fmt.Sprintf("data order unmatch: session=0x%X num_in=%d num_se=%d", tok, num, blk.num))
 		}

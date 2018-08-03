@@ -111,6 +111,7 @@ func (c *Conn) SendBlock(req Message) (*Message, error) {
 		req.Payload = payload[st:ed]
 		req.SetOption(Block1, BlockOptValue(uint32(i), m, uint32(c.BlockSizeExp)))
 
+		req.MessageID += 1
 		for j := 0; j < MaxRetransmit; j++ {
 			resp, err = c.send(req)
 			time.Sleep(time.Duration(c.MsWaitTime) * time.Millisecond)
